@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm install",
-  "startCommand": "node server.ts",
+  "outputDirectory": ".",
   "env": {
     "MONGODB_URI": "@mongodb_uri",
     "JWT_SECRET": "@jwt_secret",
