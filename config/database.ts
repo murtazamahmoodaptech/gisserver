@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-dotenv.config(); // Load .env locally
+dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -31,7 +31,7 @@ export async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      dbName: 'luxe-detail', // optional: default DB
+      dbName: 'luxe-detail',
     };
 
     cached.promise = mongoose

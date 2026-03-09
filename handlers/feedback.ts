@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../backend/config/database.ts';
-import { Feedback } from '../backend/models/Feedback.ts';
-import { sendEmail, getContactAcknowledgmentEmail } from '../backend/services/emailService.ts';
-import { verifyToken, type JwtPayload } from '../backend/utils/jwt';
+import { connectDB } from '../config/database.ts';
+import { Feedback } from '../models/Feedback.ts';
+import { sendEmail, getContactAcknowledgmentEmail } from '../services/emailService.ts';
+import { verifyToken, type JwtPayload } from '../utils/jwt.ts';
 
 async function getTokenFromRequest(req: VercelRequest): Promise<JwtPayload | null> {
   const authHeader = req.headers['authorization'];
@@ -19,7 +19,6 @@ export default async function handler(
 
   try {
     if (req.method === 'POST') {
-      // Create new feedback submission (public, no auth required)
       const feedbackData = req.body;
 
       if (!feedbackData.name || !feedbackData.email || !feedbackData.rating || !feedbackData.title || !feedbackData.feedback) {
@@ -29,7 +28,6 @@ export default async function handler(
         });
       }
 
-      // Validate rating is 1-5
       if (feedbackData.rating < 1 || feedbackData.rating > 5) {
         return res.status(400).json({
           success: false,
@@ -43,7 +41,6 @@ export default async function handler(
       });
       await feedback.save();
 
-      // Send acknowledgment email to customer
       try {
         await sendEmail({
           to: feedbackData.email,
@@ -67,7 +64,6 @@ export default async function handler(
           `,
         });
 
-        // Send admin notification
         await sendEmail({
           to: process.env.ADMIN_EMAIL || 'info@vornoxlab.com',
           subject: `New Customer Feedback - ${feedbackData.rating}/5 Stars`,
@@ -88,7 +84,6 @@ export default async function handler(
         });
       } catch (emailError) {
         console.error('Email sending error:', emailError);
-        // Continue even if email fails
       }
 
       return res.status(201).json({
@@ -98,9 +93,7 @@ export default async function handler(
       });
     }
 
-    // Check if requesting published feedback (public endpoint)
     if (req.method === 'GET' && req.query.published === 'true') {
-      // Get published feedback (public, no auth required)
       const publishedFeedback = await Feedback.find({ status: 'publish' }).sort({ createdAt: -1 });
       return res.status(200).json({
         success: true,
@@ -108,7 +101,6 @@ export default async function handler(
       });
     }
 
-    // Verify authentication for admin operations
     const user = await getTokenFromRequest(req);
     if (!user) {
       return res.status(401).json({
@@ -117,7 +109,6 @@ export default async function handler(
       });
     }
 
-    // Verify admin role
     if (user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -126,14 +117,12 @@ export default async function handler(
     }
 
     if (req.method === 'GET') {
-      // Get all feedback (admin only)
       const feedbackList = await Feedback.find().sort({ createdAt: -1 });
       return res.status(200).json({
         success: true,
         data: feedbackList,
       });
     } else if (req.method === 'PUT') {
-      // Update feedback status (admin only)
       const { id } = req.query;
       const { status } = req.body;
 
@@ -170,7 +159,6 @@ export default async function handler(
         data: feedback,
       });
     } else if (req.method === 'DELETE') {
-      // Delete feedback (admin only)
       const { id } = req.query;
 
       if (!id) {

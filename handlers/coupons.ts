@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../backend/config/database.ts';
-import { Coupon } from '../backend/models/Coupon.ts';
-import { verifyToken } from '../backend/utils/jwt.ts';
-import type { JwtPayload } from '../backend/utils/jwt.ts';
+import { connectDB } from '../config/database.ts';
+import { Coupon } from '../models/Coupon.ts';
+import { verifyToken } from '../utils/jwt.ts';
+import type { JwtPayload } from '../utils/jwt.ts';
+
 async function getTokenFromRequest(req: VercelRequest): Promise<JwtPayload | null> {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -17,10 +18,6 @@ export default async function handler(
   await connectDB();
 
   try {
-    /* ===========================
-       GET - List all active coupons (public endpoint)
-       Query: ?active=true to get only valid/active coupons
-    ============================ */
     if (req.method === 'GET' && req.query.active === 'true') {
       const now = new Date();
       const activeCoupons = await Coupon.find({
@@ -34,7 +31,6 @@ export default async function handler(
       });
     }
 
-    // Verify authentication for admin operations
     const user = await getTokenFromRequest(req);
     if (!user) {
       return res.status(401).json({
@@ -43,7 +39,6 @@ export default async function handler(
       });
     }
 
-    // Verify admin role
     if (user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -51,9 +46,6 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       GET - List all coupons (admin only)
-    ============================ */
     if (req.method === 'GET') {
       const { search, status } = req.query;
 
@@ -77,13 +69,9 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       POST - Create new coupon
-    ============================ */
     if (req.method === 'POST') {
       const { code, discountPercentage, expiryDate } = req.body;
 
-      // Validation
       if (!code || !discountPercentage || !expiryDate) {
         return res.status(400).json({
           success: false,
@@ -106,7 +94,6 @@ export default async function handler(
         });
       }
 
-      // Check if coupon code exists
       const existingCoupon = await Coupon.findOne({
         code: code.toUpperCase(),
       });
@@ -118,7 +105,6 @@ export default async function handler(
         });
       }
 
-      // Create coupon
       const newCoupon = new Coupon({
         code: code.toUpperCase(),
         discountPercentage,
@@ -134,9 +120,6 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       PUT - Update coupon
-    ============================ */
     if (req.method === 'PUT') {
       const { id } = req.query;
       const { discountPercentage, expiryDate, isActive } = req.body;
@@ -148,7 +131,6 @@ export default async function handler(
         });
       }
 
-      // Validate if updating discount
       if (discountPercentage !== undefined) {
         if (discountPercentage < 1 || discountPercentage > 100) {
           return res.status(400).json({
@@ -158,7 +140,6 @@ export default async function handler(
         }
       }
 
-      // Validate if updating expiry
       if (expiryDate !== undefined) {
         const expiry = new Date(expiryDate);
         if (expiry <= new Date()) {
@@ -193,9 +174,6 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       DELETE - Delete coupon
-    ============================ */
     if (req.method === 'DELETE') {
       const { id } = req.query;
 

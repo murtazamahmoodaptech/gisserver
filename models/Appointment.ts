@@ -19,7 +19,7 @@ export interface IAppointment extends mongoose.Document {
   vehicleCategory: string;
   date: string;
   timeSlot: string;
-  promoCode?: string; // Keep for backward compatibility
+  promoCode?: string;
   coupons: CouponDetail[];
   basePrice: number;
   totalDiscount: number;

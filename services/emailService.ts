@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
   host: process.env.STACKMAIL_HOST,
   port: parseInt(process.env.STACKMAIL_PORT || '587'),
-  secure: process.env.STACKMAIL_SECURE === 'true', // true for 465, false for other ports
+  secure: process.env.STACKMAIL_SECURE === 'true',
   auth: {
     user: process.env.STACKMAIL_USER,
     pass: process.env.STACKMAIL_PASS,
@@ -46,14 +46,15 @@ export async function sendEmail(options: EmailOptions) {
   }
 }
 
-// Email templates
-
 export function getBookingConfirmationEmail(booking: {
   fullName: string;
   serviceType: string;
   date: string;
   timeSlot: string;
   totalPrice: number;
+  basePrice?: number;
+  discount?: number;
+  coupons?: string;
 }): string {
   return `
     <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
@@ -66,7 +67,10 @@ export function getBookingConfirmationEmail(booking: {
         <p><strong>Service:</strong> ${booking.serviceType}</p>
         <p><strong>Date:</strong> ${booking.date}</p>
         <p><strong>Time:</strong> ${booking.timeSlot}</p>
-        <p><strong>Total Price:</strong> $${booking.totalPrice.toFixed(2)}</p>
+        ${booking.basePrice ? `<p><strong>Base Price:</strong> $${booking.basePrice.toFixed(2)}</p>` : ''}
+        ${booking.discount ? `<p><strong>Discount:</strong> -$${booking.discount.toFixed(2)}</p>` : ''}
+        ${booking.coupons ? `<p><strong>Applied Coupons:</strong> ${booking.coupons}</p>` : ''}
+        <p><strong>Final Price:</strong> $${booking.totalPrice.toFixed(2)}</p>
       </div>
       
       <p>We look forward to serving you!</p>

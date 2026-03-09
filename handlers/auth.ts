@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../backend/config/database.ts';
-import { User } from '../backend/models/User.ts';
-import { generateToken } from '../backend/utils/jwt.ts';
+import { connectDB } from '../config/database.ts';
+import { User } from '../models/User.ts';
+import { generateToken } from '../utils/jwt.ts';
 
 export default async function handler(
   req: VercelRequest,
@@ -17,15 +17,11 @@ export default async function handler(
       });
     }
 
-    // Support both ?action=login AND /login route
     const action =
       req.query.action ||
       (req.url?.includes('/login') && 'login') ||
       (req.url?.includes('/register') && 'register');
 
-    /* ===========================
-       LOGIN
-    ============================ */
     if (action === 'login') {
       const { email, password } = req.body;
 
@@ -63,17 +59,6 @@ export default async function handler(
         });
       }
 
-      // 🔥 Optional: Restrict to Admin Only
-      // Uncomment if this is Admin panel login
-      /*
-      if (user.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied. Admins only.',
-        });
-      }
-      */
-
       const token = generateToken({
         userId: user._id.toString(),
         email: user.email,
@@ -92,9 +77,6 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       REGISTER
-    ============================ */
     if (action === 'register') {
       const { email, password, fullName } = req.body;
 
@@ -120,7 +102,7 @@ export default async function handler(
         email: email.toLowerCase(),
         password,
         fullName,
-        role: 'user', // change to 'admin' manually if needed
+        role: 'user',
         isActive: true,
       });
 

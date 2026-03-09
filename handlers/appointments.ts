@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../backend/config/database.ts';
-import { Appointment } from '../backend/models/Appointment.ts';
-import { Coupon } from '../backend/models/Coupon.ts';
-import { sendEmail, getBookingConfirmationEmail, getAdminNotificationEmail } from '../backend/services/emailService.ts';
+import { connectDB } from '../config/database.ts';
+import { Appointment } from '../models/Appointment.ts';
+import { Coupon } from '../models/Coupon.ts';
+import { sendEmail, getBookingConfirmationEmail, getAdminNotificationEmail } from '../services/emailService.ts';
 
 export default async function handler(
   req: VercelRequest,
@@ -12,14 +12,12 @@ export default async function handler(
 
   try {
     if (req.method === 'GET') {
-      // Get all appointments
       const appointments = await Appointment.find().sort({ createdAt: -1 });
       return res.status(200).json({
         success: true,
         data: appointments,
       });
     } else if (req.method === 'POST') {
-      // Create new appointment
       const appointmentData = req.body;
 
       if (!appointmentData.fullName || !appointmentData.email) {
@@ -29,7 +27,6 @@ export default async function handler(
         });
       }
 
-      // Validate and process coupons if provided
       let processedCoupons: any[] = [];
       let totalDiscount = 0;
       let finalPrice = appointmentData.basePrice || appointmentData.totalPrice;
@@ -39,7 +36,6 @@ export default async function handler(
         const basePrice = appointmentData.basePrice || appointmentData.totalPrice;
 
         for (const couponData of appointmentData.coupons) {
-          // Find the coupon in database
           const coupon = await Coupon.findOne({ 
             code: couponData.code,
             isActive: true,
@@ -47,7 +43,6 @@ export default async function handler(
           });
 
           if (coupon) {
-            // Calculate discount for this coupon
             const discountAmount = (basePrice * coupon.discountPercentage) / 100;
             totalDiscount += discountAmount;
 
@@ -59,11 +54,9 @@ export default async function handler(
           }
         }
 
-        // Calculate final price after all discounts
         finalPrice = Math.max(0, basePrice - totalDiscount);
       }
 
-      // Ensure basePrice is set
       const appointmentToSave = {
         ...appointmentData,
         basePrice: appointmentData.basePrice || appointmentData.totalPrice,
@@ -76,7 +69,6 @@ export default async function handler(
       const appointment = new Appointment(appointmentToSave);
       await appointment.save();
 
-      // Send confirmation email to customer
       try {
         const couponCodes = processedCoupons.map(c => c.code).join(', ');
         await sendEmail({
@@ -94,7 +86,6 @@ export default async function handler(
           } as any),
         });
 
-        // Send admin notification
         await sendEmail({
           to: process.env.ADMIN_EMAIL || 'info@vornoxlab.com',
           subject: 'New Booking - Luxe Detail Booker',
@@ -107,14 +98,10 @@ export default async function handler(
             timeSlot: appointmentData.timeSlot,
             vehicleName: appointmentData.vehicleName,
             totalPrice: finalPrice,
-            basePrice: appointmentToSave.basePrice,
-            discount: totalDiscount,
-            coupons: couponCodes || 'None',
-          } as any),
+          }),
         });
       } catch (emailError) {
         console.error('Email sending error:', emailError);
-        // Continue even if email fails
       }
 
       return res.status(201).json({
@@ -123,7 +110,6 @@ export default async function handler(
         data: appointment,
       });
     } else if (req.method === 'PUT') {
-      // Update appointment
       const { id } = req.query;
 
       if (!id || typeof id !== 'string') {
@@ -152,7 +138,6 @@ export default async function handler(
         data: appointment,
       });
     } else if (req.method === 'DELETE') {
-      // Delete appointment
       const { id } = req.query;
 
       if (!id || typeof id !== 'string') {

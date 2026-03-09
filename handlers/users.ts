@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../backend/config/database';
-import { User } from '../backend/models/User';
-import { verifyToken, type JwtPayload } from '../backend/utils/jwt';
-import { generateToken } from '../backend/utils/jwt';
+import { connectDB } from '../config/database.ts';
+import { User } from '../models/User.ts';
+import { verifyToken, type JwtPayload } from '../utils/jwt.ts';
+
 async function getTokenFromRequest(req: VercelRequest): Promise<JwtPayload | null> {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -17,7 +17,6 @@ export default async function handler(
   await connectDB();
 
   try {
-    // Verify authentication
     const user = await getTokenFromRequest(req);
     if (!user) {
       return res.status(401).json({
@@ -26,7 +25,6 @@ export default async function handler(
       });
     }
 
-    // Verify admin role
     if (user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -34,9 +32,6 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       GET - List all users
-    ============================ */
     if (req.method === 'GET') {
       const { search, role, status } = req.query;
 
@@ -68,13 +63,9 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       POST - Create new user
-    ============================ */
     if (req.method === 'POST') {
       const { email, password, fullName, role } = req.body;
 
-      // Validation
       if (!email || !password || !fullName) {
         return res.status(400).json({
           success: false,
@@ -103,7 +94,6 @@ export default async function handler(
         });
       }
 
-      // Check if user exists
       const existingUser = await User.findOne({
         email: email.toLowerCase(),
       });
@@ -115,7 +105,6 @@ export default async function handler(
         });
       }
 
-      // Create user
       const newUser = new User({
         email: email.toLowerCase(),
         password,
@@ -139,9 +128,6 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       PUT - Update user
-    ============================ */
     if (req.method === 'PUT') {
       const { id } = req.query;
       const { fullName, role, isActive } = req.body;
@@ -153,7 +139,6 @@ export default async function handler(
         });
       }
 
-      // Prevent self-deletion/deactivation
       if (user.userId === id && isActive === false) {
         return res.status(400).json({
           success: false,
@@ -184,9 +169,6 @@ export default async function handler(
       });
     }
 
-    /* ===========================
-       DELETE - Delete user
-    ============================ */
     if (req.method === 'DELETE') {
       const { id } = req.query;
 
@@ -197,7 +179,6 @@ export default async function handler(
         });
       }
 
-      // Prevent self-deletion
       if (user.userId === id) {
         return res.status(400).json({
           success: false,

@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../backend/config/database.ts';
-import { Contact } from '../backend/models/Contact.ts';
-import { sendEmail, getContactAcknowledgmentEmail } from '../backend/services/emailService.ts';
-import { verifyToken, type JwtPayload } from '../backend/utils/jwt';
+import { connectDB } from '../config/database.ts';
+import { Contact } from '../models/Contact.ts';
+import { sendEmail, getContactAcknowledgmentEmail } from '../services/emailService.ts';
+import { verifyToken, type JwtPayload } from '../utils/jwt.ts';
 
 async function getTokenFromRequest(req: VercelRequest): Promise<JwtPayload | null> {
   const authHeader = req.headers['authorization'];
@@ -19,7 +19,6 @@ export default async function handler(
 
   try {
     if (req.method === 'POST') {
-      // Create new contact submission
       const contactData = req.body;
 
       if (!contactData.fullName || !contactData.email || !contactData.message) {
@@ -32,7 +31,6 @@ export default async function handler(
       const contact = new Contact(contactData);
       await contact.save();
 
-      // Send acknowledgment email to customer
       try {
         await sendEmail({
           to: contactData.email,
@@ -42,7 +40,6 @@ export default async function handler(
           }),
         });
 
-        // Send admin notification
         await sendEmail({
           to: process.env.ADMIN_EMAIL || 'info@vornoxlab.com',
           subject: `New Contact Form Submission - ${contactData.subject}`,
@@ -60,7 +57,6 @@ export default async function handler(
         });
       } catch (emailError) {
         console.error('Email sending error:', emailError);
-        // Continue even if email fails
       }
 
       return res.status(201).json({
@@ -70,7 +66,6 @@ export default async function handler(
       });
     }
 
-    // Verify authentication for admin operations
     const user = await getTokenFromRequest(req);
     if (!user) {
       return res.status(401).json({
@@ -79,7 +74,6 @@ export default async function handler(
       });
     }
 
-    // Verify admin role
     if (user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -88,14 +82,12 @@ export default async function handler(
     }
 
     if (req.method === 'GET') {
-      // Get all contact submissions (admin only)
       const contacts = await Contact.find().sort({ createdAt: -1 });
       return res.status(200).json({
         success: true,
         data: contacts,
       });
     } else if (req.method === 'PUT') {
-      // Update contact status (admin only)
       const { id } = req.query;
       const { status } = req.body;
 
@@ -132,7 +124,6 @@ export default async function handler(
         data: contact,
       });
     } else if (req.method === 'DELETE') {
-      // Delete contact submission (admin only)
       const { id } = req.query;
 
       if (!id) {
