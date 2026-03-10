@@ -1,15 +1,15 @@
 import express from 'express';
 import cors from 'cors';
-import { corsOptions } from './config/cors.ts';
-import { connectDB } from './config/database.ts';
+import { corsOptions } from './config/cors';
+import { connectDB } from './config/database';
 
 // Import route handlers
-import authHandler from './handlers/auth.ts';
-import appointmentsHandler from './handlers/appointments.ts';
-import contactHandler from './handlers/contact.ts';
-import couponsHandler from './handlers/coupons.ts';
-import usersHandler from './handlers/users.ts';
-import feedbackHandler from './handlers/feedback.ts'
+import authHandler from './handlers/auth';
+import appointmentsHandler from './handlers/appointments';
+import contactHandler from './handlers/contact';
+import couponsHandler from './handlers/coupons';
+import usersHandler from './handlers/users';
+import feedbackHandler from './handlers/feedback'
 const app = express();
 
 // Middleware

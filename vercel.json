@@ -1,13 +1,8 @@
 {
-  "buildCommand": "npm install",
-  "outputDirectory": ".",
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "crons": [
-    {
-      "path": "/api/health",
-      "schedule": "0 0 * * *"
+  "version": 2,
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs20.x"
     }
-  ]
+  }
 }
