@@ -54,36 +54,36 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.post('/api/auth/login', async (req, res) => {
   await authHandler(
-    { ...req, query: { action: 'login' } } as any,
+    { ...req, query: { action: 'login' } },
     res
   );
 });
 
 app.post('/api/auth/register', async (req, res) => {
   await authHandler(
-    { ...req, query: { action: 'register' } } as any,
+    { ...req, query: { action: 'register' } },
     res
   );
 });
 
 app.get('/api/appointments', async (req, res) => {
-  await appointmentsHandler(req as any, res);
+  await appointmentsHandler(req, res);
 });
 
 app.post('/api/appointments', async (req, res) => {
-  await appointmentsHandler(req as any, res);
+  await appointmentsHandler(req, res);
 });
 
 app.put('/api/appointments/:id', async (req, res) => {
   await appointmentsHandler(
-    { ...req, query: { id: req.params.id } } as any,
+    { ...req, query: { id: req.params.id } },
     res
   );
 });
 
 app.delete('/api/appointments/:id', async (req, res) => {
   await appointmentsHandler(
-    { ...req, query: { id: req.params.id } } as any,
+    { ...req, query: { id: req.params.id } },
     res
   );
 });
@@ -91,67 +91,69 @@ app.delete('/api/appointments/:id', async (req, res) => {
 
 // Users routes
 app.get('/api/users', async (req, res) => {
-  await usersHandler(req as any, res);
+  await usersHandler(req, res);
 });
 
 app.post('/api/users', async (req, res) => {
-  await usersHandler(req as any, res);
+  await usersHandler(req, res);
 });
 
 app.put('/api/users', async (req, res) => {
-  await usersHandler(req as any, res);
+  await usersHandler(req, res);
 });
 
 app.delete('/api/users', async (req, res) => {
-  await usersHandler(req as any, res);
+  await usersHandler(req, res);
 });
 
 
 app.post('/api/contact', async (req, res) => {
-  await contactHandler(req as any, res);
+  await contactHandler(req, res);
 });
 
 app.get('/api/contact', async (req, res) => {
-  await contactHandler(req as any, res);
+  await contactHandler(req, res);
 });
 
 app.put('/api/contact', async (req, res) => {
-  await contactHandler(req as any, res);
+  await contactHandler(req, res);
 });
 
 app.delete('/api/contact', async (req, res) => {
-  await contactHandler(req as any, res);
+  await contactHandler(req, res);
 });
 
-// Coupons routes
+// Feedback routes
 app.get('/api/feedback', async (req, res) => {
-  await feedbackHandler(req as any, res);
+  await feedbackHandler(req, res);
 });
 
 app.post('/api/feedback', async (req, res) => {
-  await feedbackHandler(req as any, res);
+  await feedbackHandler(req, res);
 });
 app.put('/api/feedback', async (req, res) => {
-  await feedbackHandler(req as any, res);
+  await feedbackHandler(req, res);
 });
 
 app.delete('/api/feedback', async (req, res) => {
-  await feedbackHandler(req as any, res);
+  await feedbackHandler(req, res);
 });
+
+// Coupons routes
 app.get('/api/coupons', async (req, res) => {
-  await couponsHandler(req as any, res);
+  await couponsHandler(req, res);
 });
 
 app.post('/api/coupons', async (req, res) => {
-  await couponsHandler(req as any, res);
+  await couponsHandler(req, res);
 });
 
 app.put('/api/coupons', async (req, res) => {
-  await couponsHandler(req as any, res);
+  await couponsHandler(req, res);
 });
 
 app.delete('/api/coupons', async (req, res) => {
-  await couponsHandler(req as any, res);
+  await couponsHandler(req, res);
 });
 
 // Error handling
