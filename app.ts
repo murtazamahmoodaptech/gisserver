@@ -28,6 +28,23 @@ app.use(express.urlencoded({ extended: true }));
   }
 })();
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    message: 'GIS Backend API is running',
+    status: 'active',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth/login, /api/auth/register',
+      appointments: '/api/appointments',
+      users: '/api/users',
+      contact: '/api/contact',
+      feedback: '/api/feedback',
+      coupons: '/api/coupons'
+    }
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
