@@ -2,16 +2,19 @@ import serverless from "serverless-http";
 import app from "../app";
 import { connectDB } from "../config/database";
 
-let connected = false;
+const handler = serverless(app);
 
-async function init() {
-  if (!connected) {
+export default async function (req: any, res: any) {
+  try {
     await connectDB();
-    connected = true;
+  } catch (err) {
+    console.error("DB connection failed:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+      error: (err as Error).message,
+    });
   }
-}
 
-export default async function handler(req: any, res: any) {
-  await init();
-  return serverless(app)(req, res);
+  return handler(req, res);
 }
