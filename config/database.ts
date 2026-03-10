@@ -3,12 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI as string; // ✅ fix here
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -26,12 +20,21 @@ if (!cached) {
 }
 
 export async function connectDB() {
+  const MONGODB_URI = process.env.MONGODB_URI;
+
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not defined');
+  }
+
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
       dbName: 'luxe-detail',
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 5000,
     };
 
     cached.promise = mongoose
@@ -42,6 +45,7 @@ export async function connectDB() {
       })
       .catch((err) => {
         console.error('MongoDB connection error:', err);
+        cached.promise = null; // reset so next request retries
         throw err;
       });
   }
