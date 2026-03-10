@@ -26,6 +26,8 @@ export async function connectDB() {
     throw new Error('MONGODB_URI environment variable is not defined');
   }
 
+  console.log('[MongoDB] Connection URI:', MONGODB_URI.substring(0, 50) + '...');
+
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
@@ -40,14 +42,17 @@ export async function connectDB() {
       retryWrites: true,
     };
 
+    console.log('[MongoDB] Attempting connection with options:', JSON.stringify(opts, null, 2));
+
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongoose) => {
         console.log('[MongoDB] Connected successfully');
         return mongoose;
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error('[MongoDB] Connection error:', err.message);
+        console.error('[MongoDB] Full error:', err);
         cached.promise = null; // reset so next request retries
         throw err;
       });
