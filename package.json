@@ -4,9 +4,9 @@
   "description": "GIS Backend API - Deployed on Vercel",
   "main": "api/index.ts",
   "scripts": {
-    "dev": "tsx api/index.ts",
+    "dev": "tsx server.ts",
     "build": "tsc",
-    "start": "node api/index.ts"
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "@vercel/node": "^5.6.10",
