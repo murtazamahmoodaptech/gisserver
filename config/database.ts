@@ -31,20 +31,23 @@ export async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      dbName: 'luxe-detail',
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 5000,
+      maxPoolSize: 10,
+      minPoolSize: 5,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 10000,
+      maxIdleTimeMS: 45000,
+      retryWrites: true,
     };
 
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongoose) => {
-        console.log('MongoDB connected');
+        console.log('[MongoDB] Connected successfully');
         return mongoose;
       })
       .catch((err) => {
-        console.error('MongoDB connection error:', err);
+        console.error('[MongoDB] Connection error:', err.message);
         cached.promise = null; // reset so next request retries
         throw err;
       });
