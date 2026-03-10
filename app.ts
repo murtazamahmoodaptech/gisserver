@@ -17,16 +17,17 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize database connection on startup
-(async () => {
-  try {
-    console.log('[v0] Starting database connection...');
-    await connectDB();
-    console.log('[v0] Database initialized successfully');
-  } catch (err) {
-    console.error('[v0] Failed to initialize database on startup:', err);
-  }
-})();
+// Initialize database connection asynchronously in background
+// Don't await it - let requests handle connection lazily
+let dbInitialized = false;
+if (!dbInitialized) {
+  dbInitialized = true;
+  connectDB().then(() => {
+    console.log('[v0] Background database connection established');
+  }).catch((err) => {
+    console.error('[v0] Background database connection failed:', err.message);
+  });
+}
 
 // Root route
 app.get('/', (req, res) => {

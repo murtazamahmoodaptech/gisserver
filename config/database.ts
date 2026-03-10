@@ -33,13 +33,14 @@ export async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      maxPoolSize: 10,
-      minPoolSize: 5,
-      serverSelectionTimeoutMS: 10000,
-      connectTimeoutMS: 10000,
-      socketTimeoutMS: 10000,
-      maxIdleTimeMS: 45000,
+      maxPoolSize: 5,
+      minPoolSize: 1,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 5000,
+      maxIdleTimeMS: 30000,
       retryWrites: true,
+      waitQueueTimeoutMS: 5000,
     };
 
     console.log('[MongoDB] Attempting connection with options:', JSON.stringify(opts, null, 2));
