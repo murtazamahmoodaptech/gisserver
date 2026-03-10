@@ -149,7 +149,6 @@ app.use(
   }
 );
 
-// 404 handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
