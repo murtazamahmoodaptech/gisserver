@@ -17,6 +17,17 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Initialize database connection on startup
+(async () => {
+  try {
+    console.log('[v0] Starting database connection...');
+    await connectDB();
+    console.log('[v0] Database initialized successfully');
+  } catch (err) {
+    console.error('[v0] Failed to initialize database on startup:', err);
+  }
+})();
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
