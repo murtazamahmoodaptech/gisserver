@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../config/database.ts';
-import { User } from '../models/User.ts';
-import { verifyToken, type JwtPayload } from '../utils/jwt.ts';
+import { connectDB } from '../config/database';
+import { User } from '../models/User';
+import { verifyToken, type JwtPayload } from '../utils/jwt';
 
 async function getTokenFromRequest(req: VercelRequest): Promise<JwtPayload | null> {
   const authHeader = req.headers['authorization'];
