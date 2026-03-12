@@ -57,29 +57,64 @@ export function getBookingConfirmationEmail(booking: {
   coupons?: string;
 }): string {
   return `
-    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-      <h2>Booking Confirmation</h2>
-      <p>Dear ${booking.fullName},</p>
-      <p>Thank you for booking with Luxe Detail Booker! Your appointment has been confirmed.</p>
-      
-      <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-        <h3>Booking Details</h3>
+<div style="font-family: Arial, Helvetica, sans-serif; background:#f4f6f8; padding:30px; color:#333;">
+  
+  <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.08);">
+
+    <!-- Header -->
+    <div style="background:#0f172a; color:#ffffff; padding:20px; text-align:center;">
+      <h1 style="margin:0; font-size:24px;">Global Integrated Support</h1>
+      <p style="margin:5px 0 0; font-size:13px; opacity:0.8;">Professional Booking Services</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:25px;">
+      <h2 style="margin-top:0; color:#0f172a;">Booking Confirmation</h2>
+
+      <p>Dear <strong>${booking.fullName}</strong>,</p>
+      <p>
+        Thank you for booking with <strong>Global Integrated Support</strong>.  
+        Your appointment has been successfully confirmed.
+      </p>
+
+      <!-- Booking Card -->
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:20px; border-radius:6px; margin:20px 0;">
+        <h3 style="margin-top:0; color:#111827;">Booking Details</h3>
+
         <p><strong>Service:</strong> ${booking.serviceType}</p>
         <p><strong>Date:</strong> ${booking.date}</p>
         <p><strong>Time:</strong> ${booking.timeSlot}</p>
+
         ${booking.basePrice ? `<p><strong>Base Price:</strong> $${booking.basePrice.toFixed(2)}</p>` : ''}
-        ${booking.discount ? `<p><strong>Discount:</strong> -$${booking.discount.toFixed(2)}</p>` : ''}
+
+        ${booking.discount ? `<p style="color:#16a34a;"><strong>Discount:</strong> -$${booking.discount.toFixed(2)}</p>` : ''}
+
         ${booking.coupons ? `<p><strong>Applied Coupons:</strong> ${booking.coupons}</p>` : ''}
-        <p><strong>Final Price:</strong> $${booking.totalPrice.toFixed(2)}</p>
+
+        <p style="font-size:16px; margin-top:10px;">
+          <strong>Total Price:</strong> 
+          <span style="color:#2563eb;">$${booking.totalPrice.toFixed(2)}</span>
+        </p>
       </div>
-      
-      <p>We look forward to serving you!</p>
-      <p style="margin-top: 30px; color: #666; font-size: 12px;">
-        Luxe Detail Booker<br>
-        Email: info@vornoxlab.com
+
+      <p>We look forward to serving you and providing the best experience.</p>
+
+      <p style="margin-top:25px;">
+        Best Regards,<br>
+        <strong>Global Integrated Support Team</strong>
       </p>
     </div>
-  `;
+
+    <!-- Footer -->
+    <div style="background:#f1f5f9; padding:15px; text-align:center; font-size:12px; color:#64748b;">
+      Global Integrated Support<br>
+      Email: info@vornoxlab.com
+    </div>
+
+  </div>
+
+</div>
+`;
 }
 
 export function getContactAcknowledgmentEmail(contact: {
