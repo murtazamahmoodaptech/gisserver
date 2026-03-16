@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../config/database.ts';
-import { User } from '../models/User.ts';
-import { generateToken } from '../utils/jwt.ts';
+import { connectDB } from '../config/database';
+import { User } from '../models/User';
+import { generateToken } from '../utils/jwt';
 
 export default async function handler(
   req: VercelRequest,
