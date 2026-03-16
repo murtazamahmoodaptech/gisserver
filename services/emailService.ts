@@ -30,7 +30,7 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions) {
   try {
     const mailOptions = {
-      from: `"Luxe Detail Booker" <${process.env.STACKMAIL_USER}>`,
+      from: `"Global Integrated Support" <${process.env.STACKMAIL_USER}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -124,12 +124,12 @@ export function getContactAcknowledgmentEmail(contact: {
     <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
       <h2>We Received Your Message</h2>
       <p>Dear ${contact.fullName},</p>
-      <p>Thank you for contacting Luxe Detail Booker. We have received your message and will get back to you as soon as possible.</p>
+      <p>Thank you for contacting Global Integrated Support. We have received your message and will get back to you as soon as possible.</p>
       
       <p style="margin-top: 30px; color: #666; font-size: 12px;">
         Best regards,<br>
-        Luxe Detail Booker Team<br>
-        Email: info@vornoxlab.com
+        Global Integrated Support Team<br>
+        Email: support@globalintegratedsupport.com
       </p>
     </div>
   `;

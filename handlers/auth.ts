@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../config/database';
-import { User } from '../models/User';
-import { generateToken } from '../utils/jwt';
+import { connectDB } from '../config/database.ts';
+import { User } from '../models/User.ts';
+import { generateToken } from '../utils/jwt.ts';
 
 export default async function handler(
   req: VercelRequest,
@@ -78,7 +78,7 @@ export default async function handler(
     }
 
     if (action === 'register') {
-      const { email, password, fullName } = req.body;
+      const { email, password, fullName, role } = req.body;
 
       if (!email || !password || !fullName) {
         return res.status(400).json({
@@ -102,7 +102,7 @@ export default async function handler(
         email: email.toLowerCase(),
         password,
         fullName,
-        role: 'user',
+  role: role || 'user', // agar role na ho to user
         isActive: true,
       });
 
