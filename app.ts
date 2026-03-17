@@ -10,6 +10,7 @@ import contactHandler from './handlers/contact';
 import couponsHandler from './handlers/coupons';
 import usersHandler from './handlers/users';
 import feedbackHandler from './handlers/feedback'
+import facebookSyncHandler from './api/feedback/sync-facebook'; 
 const app = express();
 
 // Middleware
@@ -138,7 +139,10 @@ app.put('/api/feedback', async (req, res) => {
 app.delete('/api/feedback', async (req, res) => {
   await feedbackHandler(req, res);
 });
-
+app.post('/api/feedback/sync-facebook', async (req, res) => {
+  // We cast req/res to any to match the VercelRequest/Response types used in your handler
+  await facebookSyncHandler(req as any, res as any);
+});
 // Coupons routes
 app.get('/api/coupons', async (req, res) => {
   await couponsHandler(req, res);
