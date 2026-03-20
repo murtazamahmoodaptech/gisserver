@@ -34,7 +34,7 @@ export default async function handler(
       try {
         await sendEmail({
           to: contactData.email,
-          subject: 'Thank you for contacting Luxe Detail Booker',
+          subject: 'Thank you for contacting Global Integrated Support',
           html: getContactAcknowledgmentEmail({
             fullName: contactData.fullName,
           }),

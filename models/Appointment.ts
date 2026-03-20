@@ -10,10 +10,18 @@ export interface IAppointment extends mongoose.Document {
   fullName: string;
   phone: string;
   email: string;
-  address: string;
+  // New address fields
+  streetAddress: string;
+  aptUnit?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  // Legacy address field for backward compatibility
+  address?: string;
+  // Vehicle info (simplified - only make, model, year)
   vehicleName: string;
   make: string;
-  vehicleModel: string; // ✅ renamed from 'model'
+  vehicleModel: string;
   year: string;
   serviceType: string;
   vehicleCategory: string;
@@ -45,19 +53,40 @@ const appointmentSchema = new mongoose.Schema<IAppointment>(
       required: [true, 'Email is required'],
       lowercase: true,
     },
+    // New address fields
+    streetAddress: {
+      type: String,
+      required: [true, 'Street address is required'],
+    },
+    aptUnit: {
+      type: String,
+      default: '',
+    },
+    city: {
+      type: String,
+      required: [true, 'City is required'],
+    },
+    state: {
+      type: String,
+      required: [true, 'State is required'],
+    },
+    zipCode: {
+      type: String,
+      required: [true, 'Zip code is required'],
+    },
+    // Legacy address field (kept for backward compatibility, auto-computed)
     address: {
       type: String,
-      required: [true, 'Address is required'],
+      default: '',
     },
     vehicleName: {
       type: String,
-      required: [true, 'Vehicle name is required'],
     },
     make: {
       type: String,
       required: [true, 'Vehicle make is required'],
     },
-    vehicleModel: { // ✅ renamed from 'model'
+    vehicleModel: {
       type: String,
       required: [true, 'Vehicle model is required'],
     },
@@ -125,6 +154,21 @@ const appointmentSchema = new mongoose.Schema<IAppointment>(
   },
   { timestamps: true }
 );
+
+// Pre-save middleware to auto-compute legacy address field
+appointmentSchema.pre('save', function(next) {
+  if (this.streetAddress) {
+    const addressParts = [
+      this.streetAddress,
+      this.aptUnit ? `Apt/Unit: ${this.aptUnit}` : '',
+      this.city,
+      this.state,
+      this.zipCode
+    ].filter(Boolean);
+    this.address = addressParts.join(', ');
+  }
+  next();
+});
 
 export const Appointment =
   mongoose.models.Appointment ||

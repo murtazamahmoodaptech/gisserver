@@ -11,8 +11,10 @@ export const syncFacebookReviews = async () => {
   }
 
   try {
-    const url = `https://graph.facebook.com/v19.0/${PAGE_ID}/posts?fields=comments{message,from,created_time}&access_token=${ACCESS_TOKEN}`;
-    
+// Use /feed instead of /posts to get more activity
+// Added limit=100 to get more data in one go
+// Change your URL line to this:
+const url = `https://graph.facebook.com/v25.0/${PAGE_ID}/feed?fields=message,created_time,comments{message,from{name,id},created_time}&limit=100&access_token=${ACCESS_TOKEN}`;
     console.log("[v0] Fetching Facebook comments from page:", PAGE_ID);
     const response = await axios.get(url, { timeout: 30000 });
 
@@ -40,18 +42,20 @@ export const syncFacebookReviews = async () => {
           }
 
           // Create new feedback from Facebook comment
-          await Feedback.create({
-            name: comment.from?.name || 'Facebook User',
-            email: 'facebook@placeholder.com',
-            rating: 5, // Default to 5 stars for Facebook comments
-            title: 'Facebook Comment',
-            feedback: comment.message || '[No message]',
-            status: 'pending',
-            source: 'facebook',
-            externalId: comment.id,
-            profileUrl: comment.from?.id ? `https://facebook.com/${comment.from.id}` : null,
-          });
-
+          // Replace the creation logic in your loop with this:
+await Feedback.create({
+  // Use the name if available, otherwise fallback to a better placeholder
+  name: comment.from?.name || 'Vornox Customer', 
+  email: 'facebook@placeholder.com',
+  rating: 5,
+  title: 'Facebook Comment',
+  feedback: comment.message || '[No message]',
+  status: 'pending',
+  source: 'facebook',
+  externalId: comment.id,
+  // If ID is missing, we can't link the profile
+  profileUrl: comment.from?.id ? `https://facebook.com/${comment.from.id}` : null,
+});
           inserted++;
         } catch (err) {
           const errMsg = err instanceof Error ? err.message : String(err);
