@@ -5,9 +5,10 @@ import { verifyToken } from '../../utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    // 1. Establish Database Connection
     await connectDB();
 
-    // 🔐 Validate token and admin role
+    // 2. 🔐 Validate Authorization Token
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       return res.status(401).json({
@@ -16,6 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // 3. Verify Admin Privileges
     const user = verifyToken(token);
     if (!user || user.role !== 'admin') {
       return res.status(403).json({
@@ -24,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Validate Facebook credentials exist
+    // 4. Validate Environment Configuration
     if (!process.env.FB_PAGE_ID || !process.env.FB_ACCESS_TOKEN) {
       return res.status(400).json({
         success: false,
@@ -32,16 +34,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // 5. Handle the Sync Request
     if (req.method === 'POST') {
+      // Calls the service that now fetches both Feed Comments and Recommendations
       const result = await syncFacebookReviews();
 
       return res.status(200).json({
         success: true,
-        message: `Successfully synced ${result.inserted} Facebook reviews`,
-        data: result,
+        message: `Sync complete: ${result.inserted} new items added, ${result.skipped} existing items skipped.`,
+        data: {
+          newItems: result.inserted,
+          skippedItems: result.skipped,
+          timestamp: new Date().toISOString()
+        },
       });
     }
 
+    // 6. Handle Unsupported Methods
     return res.status(405).json({ 
       success: false,
       message: 'Method not allowed. Use POST to sync reviews.' 
@@ -50,6 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error("[v0] Facebook sync error:", error);
     
+    // Extracts specific Facebook API error messages if available from the service
     const errorMessage = error instanceof Error 
       ? error.message 
       : 'Failed to sync Facebook reviews. Please check your credentials and try again.';
