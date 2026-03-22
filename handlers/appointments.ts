@@ -10,161 +10,159 @@ export default async function handler(
 ) {
   await connectDB();
 
+  const { id } = req.query;
+
   try {
+    // --- GET ALL ---
     if (req.method === 'GET') {
       const appointments = await Appointment.find().sort({ createdAt: -1 });
       return res.status(200).json({
         success: true,
         data: appointments,
       });
-    } else if (req.method === 'POST') {
+    } 
+
+    // --- CREATE NEW (POST) ---
+    else if (req.method === 'POST') {
       const appointmentData = req.body;
 
-      if (!appointmentData.fullName || !appointmentData.email) {
-        return res.status(400).json({
-          success: false,
-          message: 'Missing required fields',
-        });
+      // 1. Validating new required fields from Book.tsx
+      const requiredFields = [
+        'fullName', 'email', 'phone', 
+        'streetAddress', 'city', 'state', 'zipCode', 
+        'make', 'vehicleModel', 'year'
+      ];
+      
+      for (const field of requiredFields) {
+        if (!appointmentData[field]) {
+          return res.status(400).json({
+            success: false,
+            message: `Missing required field: ${field}`,
+          });
+        }
       }
 
       let processedCoupons: any[] = [];
       let totalDiscount = 0;
-      let finalPrice = appointmentData.basePrice || appointmentData.totalPrice;
+      const basePrice = Number(appointmentData.basePrice) || 0;
 
-      if (appointmentData.coupons && Array.isArray(appointmentData.coupons) && appointmentData.coupons.length > 0) {
+      // 2. Specialized Coupon Logic
+      if (appointmentData.coupons && Array.isArray(appointmentData.coupons)) {
         const now = new Date();
-        const basePrice = appointmentData.basePrice || appointmentData.totalPrice;
-
         for (const couponData of appointmentData.coupons) {
-          const coupon = await Coupon.findOne({ 
-            code: couponData.code,
+          const upperCode = couponData.code.toUpperCase();
+          
+          // Check DB for active coupon
+          let coupon = await Coupon.findOne({ 
+            code: upperCode,
             isActive: true,
             expiryDate: { $gt: now }
           });
 
-          if (coupon) {
-            const discountAmount = (basePrice * coupon.discountPercentage) / 100;
+          // Fallback for hardcoded 'FIRST10' from frontend
+          if (coupon || upperCode === 'FIRST10') {
+            const percentage = coupon ? coupon.discountPercentage : 10;
+            const discountAmount = (basePrice * percentage) / 100;
             totalDiscount += discountAmount;
 
             processedCoupons.push({
-              code: coupon.code,
-              discountPercentage: coupon.discountPercentage,
+              code: upperCode,
+              discountPercentage: percentage,
               discountAmount: discountAmount,
             });
           }
         }
-
-        finalPrice = Math.max(0, basePrice - totalDiscount);
       }
+
+      const finalPrice = Math.max(0, basePrice - totalDiscount);
+
+      // 3. Construct vehicleName as required by schema
+      const vehicleName = `${appointmentData.year} ${appointmentData.make} ${appointmentData.vehicleModel}`;
 
       const appointmentToSave = {
         ...appointmentData,
-        basePrice: appointmentData.basePrice || appointmentData.totalPrice,
-        coupons: processedCoupons,
-        totalDiscount: totalDiscount,
+        vehicleName,
+        basePrice,
+        totalDiscount,
         totalPrice: finalPrice,
+        coupons: processedCoupons,
         discountApplied: processedCoupons.length > 0,
+        status: 'Pending'
       };
 
       const appointment = new Appointment(appointmentToSave);
-      await appointment.save();
+      await appointment.save(); // Note: Model pre-save hook handles the combined 'address' field
 
+      // 4. Emails
       try {
         const couponCodes = processedCoupons.map(c => c.code).join(', ');
+        
         await sendEmail({
           to: appointmentData.email,
           subject: 'Global Integrated Support - Appointment Confirmation',
           html: getBookingConfirmationEmail({
-            fullName: appointmentData.fullName,
-            serviceType: appointmentData.serviceType,
-            date: appointmentData.date,
-            timeSlot: appointmentData.timeSlot,
-            totalPrice: finalPrice,
-            basePrice: appointmentToSave.basePrice,
-            discount: totalDiscount,
+            ...appointmentToSave,
             coupons: couponCodes || 'None',
           } as any),
         });
 
         await sendEmail({
           to: process.env.ADMIN_EMAIL || 'info@vornoxlab.com',
-          subject: 'New Booking - Global Integrated Support',
+          subject: `New Booking: ${appointmentData.fullName}`,
           html: getAdminNotificationEmail({
-            fullName: appointmentData.fullName,
-            phone: appointmentData.phone,
-            email: appointmentData.email,
-            serviceType: appointmentData.serviceType,
-            date: appointmentData.date,
-            timeSlot: appointmentData.timeSlot,
-            vehicleName: appointmentData.vehicleName,
-            totalPrice: finalPrice,
-          }),
+            ...appointmentToSave,
+            // Re-constructing address for admin readability in email
+            address: `${appointmentData.streetAddress}, ${appointmentData.city}, ${appointmentData.state} ${appointmentData.zipCode}`,
+          } as any),
         });
-      } catch (emailError) {
-        console.error('Email sending error:', emailError);
+      } catch (e) {
+        console.error('Email error:', e);
       }
 
-      return res.status(201).json({
-        success: true,
-        message: 'Appointment created successfully',
-        data: appointment,
-      });
-    } else if (req.method === 'PUT') {
-      const { id } = req.query;
+      return res.status(201).json({ success: true, data: appointment });
+    }
 
+    // --- UPDATE (PUT) ---
+    else if (req.method === 'PUT') {
       if (!id || typeof id !== 'string') {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid appointment ID',
-        });
+        return res.status(400).json({ success: false, message: 'Invalid ID' });
+      }
+
+      // If updating address or vehicle, we recalculate derived strings
+      const updates = { ...req.body };
+      if (updates.year && updates.make && updates.vehicleModel) {
+        updates.vehicleName = `${updates.year} ${updates.make} ${updates.vehicleModel}`;
       }
 
       const appointment = await Appointment.findByIdAndUpdate(
         id,
-        req.body,
+        updates,
         { new: true, runValidators: true }
       );
 
       if (!appointment) {
-        return res.status(404).json({
-          success: false,
-          message: 'Appointment not found',
-        });
+        return res.status(404).json({ success: false, message: 'Not found' });
       }
 
-      return res.status(200).json({
-        success: true,
-        message: 'Appointment updated successfully',
-        data: appointment,
-      });
-    } else if (req.method === 'DELETE') {
-      const { id } = req.query;
+      return res.status(200).json({ success: true, data: appointment });
+    }
 
+    // --- DELETE ---
+    else if (req.method === 'DELETE') {
       if (!id || typeof id !== 'string') {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid appointment ID',
-        });
+        return res.status(400).json({ success: false, message: 'Invalid ID' });
       }
 
       const appointment = await Appointment.findByIdAndDelete(id);
-
       if (!appointment) {
-        return res.status(404).json({
-          success: false,
-          message: 'Appointment not found',
-        });
+        return res.status(404).json({ success: false, message: 'Not found' });
       }
 
-      return res.status(200).json({
-        success: true,
-        message: 'Appointment deleted successfully',
-      });
-    } else {
-      return res.status(405).json({
-        success: false,
-        message: 'Method not allowed',
-      });
+      return res.status(200).json({ success: true, message: 'Deleted' });
+    } 
+    
+    else {
+      return res.status(405).json({ success: false, message: 'Method not allowed' });
     }
   } catch (error) {
     console.error('Appointments error:', error);
