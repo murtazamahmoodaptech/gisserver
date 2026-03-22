@@ -81,6 +81,7 @@ const appointmentSchema = new mongoose.Schema<IAppointment>(
     },
     vehicleName: {
       type: String,
+      required: [true, 'Vehicle name is required'],
     },
     make: {
       type: String,
@@ -156,18 +157,24 @@ const appointmentSchema = new mongoose.Schema<IAppointment>(
 );
 
 // Pre-save middleware to auto-compute legacy address field
-appointmentSchema.pre('save', function(next) {
+// NOTE: Do NOT use async/next together - use one or the other
+appointmentSchema.pre('save', function() {
+  // Auto-compute address from new fields
   if (this.streetAddress) {
     const addressParts = [
       this.streetAddress,
-      this.aptUnit ? `Apt/Unit: ${this.aptUnit}` : '',
+      this.aptUnit || '',
       this.city,
       this.state,
       this.zipCode
     ].filter(Boolean);
     this.address = addressParts.join(', ');
   }
-  next();
+  
+  // Auto-compute vehicleName if not provided
+  if (!this.vehicleName && this.make && this.vehicleModel) {
+    this.vehicleName = `${this.make} ${this.vehicleModel}`;
+  }
 });
 
 export const Appointment =
