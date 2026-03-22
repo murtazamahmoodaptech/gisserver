@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { connectDB } from '../backend/config/database';
-import { Appointment } from '../backend/models/Appointment';
-import { Coupon } from '../backend/models/Coupon';
-import { sendEmail, getBookingConfirmationEmail, getAdminNotificationEmail } from '../backend/services/emailService';
+import { connectDB } from '../config/database';
+import { Appointment } from '../models/Appointment';
+import { Coupon } from '../models/Coupon';
+import { sendEmail, getBookingConfirmationEmail, getAdminNotificationEmail } from '../services/emailService';
 
 export default async function handler(
   req: VercelRequest,
