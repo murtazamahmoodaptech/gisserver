@@ -15,43 +15,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } 
 
     else if (req.method === 'POST') {
-      const appointmentData = req.body;
+      const data = req.body;
 
-      // 1. Validation
-      const requiredFields = ['fullName', 'email', 'phone', 'streetAddress', 'city', 'state', 'zipCode', 'make', 'vehicleModel', 'year'];
-      for (const field of requiredFields) {
-        if (!appointmentData[field]) {
-          return res.status(400).json({ success: false, message: `Missing field: ${field}` });
-        }
+      // 1. Strict Validation
+      const required = ['fullName', 'email', 'phone', 'streetAddress', 'city', 'state', 'zipCode', 'make', 'vehicleModel', 'year'];
+      for (const field of required) {
+        if (!data[field]) return res.status(400).json({ success: false, message: `Missing: ${field}` });
       }
 
-      // 2. Coupon & Pricing Logic
+      // 2. Pricing & Coupon Calculation
       let processedCoupons: any[] = [];
       let totalDiscount = 0;
-      const basePrice = Number(appointmentData.basePrice) || 0;
+      const basePrice = Number(data.basePrice) || 0;
 
-      if (appointmentData.coupons && Array.isArray(appointmentData.coupons)) {
+      if (data.coupons && Array.isArray(data.coupons)) {
         const now = new Date();
-        for (const couponData of appointmentData.coupons) {
-          const upperCode = couponData.code.toUpperCase();
-          let coupon = await Coupon.findOne({ code: upperCode, isActive: true, expiryDate: { $gt: now } });
+        for (const c of data.coupons) {
+          const code = c.code.toUpperCase();
+          // Check DB or allow frontend's hardcoded promo
+          let dbCoupon = await Coupon.findOne({ code, isActive: true, expiryDate: { $gt: now } });
 
-          if (coupon || upperCode === 'FIRST10') {
-            const percentage = coupon ? coupon.discountPercentage : 10;
-            const amount = (basePrice * percentage) / 100;
+          if (dbCoupon || code === 'FIRST10') {
+            const pct = dbCoupon ? dbCoupon.discountPercentage : 10;
+            const amount = (basePrice * pct) / 100;
             totalDiscount += amount;
-            processedCoupons.push({ code: upperCode, discountPercentage: percentage, discountAmount: amount });
+            processedCoupons.push({ code, discountPercentage: pct, discountAmount: amount });
           }
         }
       }
 
       const finalPrice = Math.max(0, basePrice - totalDiscount);
-      const vehicleName = `${appointmentData.year} ${appointmentData.make} ${appointmentData.vehicleModel}`;
 
-      // 3. Save to DB
+      // 3. Create Appointment (Pre-save hook handles combined address/vehicleName)
       const appointment = new Appointment({
-        ...appointmentData,
-        vehicleName,
+        ...data,
         basePrice,
         totalDiscount,
         totalPrice: finalPrice,
@@ -60,62 +57,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         status: 'Pending'
       });
 
-      await appointment.save(); // This triggers the pre-save hook we fixed in Step 1
+      await appointment.save();
 
-      // 4. Send Emails
+      // 4. Send Synchronized Emails
       try {
-        const couponCodes = processedCoupons.map(c => c.code).join(', ');
-        const fullAddress = `${appointmentData.streetAddress}${appointmentData.aptUnit ? ', ' + appointmentData.aptUnit : ''}, ${appointmentData.city}, ${appointmentData.state} ${appointmentData.zipCode}`;
+        const fullAddress = `${data.streetAddress}${data.aptUnit ? ', ' + data.aptUnit : ''}, ${data.city}, ${data.state} ${data.zipCode}`;
+        const vehicleDisplay = `${data.year} ${data.make} ${data.vehicleModel}`;
 
-        // Customer Email
         await sendEmail({
-          to: appointmentData.email,
+          to: data.email,
           subject: 'Appointment Confirmed - Global Integrated Support',
           html: getBookingConfirmationEmail({
-            fullName: appointmentData.fullName,
-            serviceType: appointmentData.serviceType,
-            date: appointmentData.date,
-            timeSlot: appointmentData.timeSlot,
+            ...data,
             totalPrice: finalPrice,
-            basePrice: basePrice,
+            basePrice,
             discount: totalDiscount,
-            coupons: couponCodes || 'None',
+            coupons: processedCoupons.map(cp => cp.code).join(', ') || 'None',
           } as any),
         });
 
-        // Admin Email
         await sendEmail({
           to: process.env.ADMIN_EMAIL || 'info@vornoxlab.com',
-          subject: `New Booking: ${appointmentData.fullName}`,
+          subject: `New Booking: ${data.fullName}`,
           html: getAdminNotificationEmail({
-            fullName: appointmentData.fullName,
-            phone: appointmentData.phone,
-            email: appointmentData.email,
-            serviceType: appointmentData.serviceType,
-            date: appointmentData.date,
-            timeSlot: appointmentData.timeSlot,
-            vehicleName: vehicleName,
+            ...data,
+            vehicleName: vehicleDisplay,
             totalPrice: finalPrice,
-            address: fullAddress, // Send the combined address to admin
+            address: fullAddress,
           } as any),
         });
-      } catch (e) {
-        console.error('Email error:', e);
-      }
+      } catch (err) { console.error('Email failed:', err); }
 
       return res.status(201).json({ success: true, data: appointment });
     }
 
     else if (req.method === 'PUT') {
-      if (!id) return res.status(400).json({ success: false, message: 'ID required' });
-      
-      const updates = { ...req.body };
-      if (updates.year && updates.make && updates.vehicleModel) {
-        updates.vehicleName = `${updates.year} ${updates.make} ${updates.vehicleModel}`;
-      }
-
-      const appointment = await Appointment.findByIdAndUpdate(id, updates, { new: true });
-      return res.status(200).json({ success: true, data: appointment });
+      const updated = await Appointment.findByIdAndUpdate(id, req.body, { new: true });
+      return res.status(200).json({ success: true, data: updated });
     }
 
     else if (req.method === 'DELETE') {
@@ -124,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
   } catch (error) {
-    console.error('Appointments error:', error);
+    console.error('API Error:', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
