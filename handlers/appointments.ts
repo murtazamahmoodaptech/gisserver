@@ -81,7 +81,7 @@ export default async function handler(
         const couponCodes = processedCoupons.map(c => c.code).join(', ');
         await sendEmail({
           to: appointmentData.email,
-          subject: 'Luxe Detail Booker - Appointment Confirmation',
+          subject: 'Global Integrated Support - Appointment Confirmation',
           html: getBookingConfirmationEmail({
             fullName: appointmentData.fullName,
             serviceType: appointmentData.serviceType,
@@ -96,8 +96,8 @@ export default async function handler(
 
         // Send admin notification
         await sendEmail({
-          to: process.env.ADMIN_EMAIL || 'info@vornoxlab.com',
-          subject: 'New Booking - Luxe Detail Booker',
+          to: process.env.ADMIN_EMAIL || 'support@globalintegratedsupport.com',
+          subject: 'New Booking - Global Integrated Support',
           html: getAdminNotificationEmail({
             fullName: appointmentData.fullName,
             phone: appointmentData.phone,
