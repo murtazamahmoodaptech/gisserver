@@ -105,7 +105,6 @@ export default async function handler(
             serviceType: appointmentData.serviceType,
             date: appointmentData.date,
             timeSlot: appointmentData.timeSlot,
-            vehicleName: appointmentData.vehicleName,
             totalPrice: finalPrice,
             basePrice: appointmentToSave.basePrice,
             discount: totalDiscount,

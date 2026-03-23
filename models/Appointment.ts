@@ -81,7 +81,6 @@ const appointmentSchema = new mongoose.Schema<IAppointment>(
     },
     vehicleName: {
       type: String,
-      required: [true, 'Vehicle name is required'],
     },
     make: {
       type: String,
